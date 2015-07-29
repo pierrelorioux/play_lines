@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+path {
+  fill: none;
+  stroke: #000;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="http://api.tiles.mapbox.com/mapbox.js/plugins/turf/v2.0.0/turf.min.js"></script>
+<script src="http://underscorejs.org/underscore.js"></script>
+<script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+<script>
+
+var width = 960,
+    height = 600;
+
+var projection = d3.geo.albers()
+    .center([0, 35.4])
+    .rotate([-10, 0])
+    .parallels([50, 60])
+    .scale(4000)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+d3.json("poly.geojson", function(error, us) {
+
+      svg.append("path")
+          .datum(us)
+          .attr("d", path);
+          //.attr("style","fill:red");
+});
+
+var lin = d3.json("poly.geojson", function(error, us) {
+  return kine = us;
+});
+
+var ply = d3.json("poly.geojson",function(err,poly){
+  //console.log(pol);
+  return pol = turf.envelope(poly);
+});
+
+var all_cent=[];
+var nearest_point_to_cent = []
+var centroids = d3.json("poly.geojson",function(err,poly){
+  feat = poly.features;
+
+  var centroid = feat.map(function(d){
+    //console.log(all_cent);
+    all_cent.push(turf.centroid(d))
+  })
+
+});
+
+
+
+
+$( document ).ready(function() {
+
+
+console.log(pol);
+console.log(pol.geometry.coordinates);
+b1 = pol.geometry.coordinates[0,0][0][0];
+b2 = pol.geometry.coordinates[0,0][0][1];
+b3 = pol.geometry.coordinates[0,0][2][0];
+b4 = pol.geometry.coordinates[0,0][2][1];
+bbox = Array(b1,b2,b3,b4);
+console.log(bbox);
+
+//var poly = turf.bboxPolygon(bbox);
+
+var extent = bbox;
+var cellWidth = 30;
+var units = 'miles';
+
+var grid = turf.pointGrid(extent, cellWidth, units);
+
+console.log(grid);
+
+//console.log(all_cent);
+var fc = turf.featurecollection(all_cent);
+//console.log(fc);
+
+
+var nearest_point_to_cent = []
+
+var near_point = d3.json("poly.geojson",function(err,poly){
+
+  feat = poly.features;
+
+  var centroid = feat.map(function(d){
+    cent = turf.centroid(d);
+    //console.log(turf.nearest(cent,grid));
+    nearest_point_to_cent.push(turf.nearest(cent,grid))
+  })
+
+});
+
+var nearpt = turf.featurecollection(nearest_point_to_cent);
+//console.log(nearpt);
+
+
+
+var combinedcoords = [];
+
+var coords = d3.json("poly.geojson",function(err,poly){
+
+  feat = poly.features;
+
+  var centroid = feat.map(function(d){
+    cent = turf.centroid(d);
+    cx = cent.geometry.coordinates[0];
+    nearest = turf.nearest(cent,grid);
+    cy = nearest.geometry.coordinates[1];
+    console.log(cx,cy);
+    var Okpoint = {
+    "type": "Feature",
+    "properties": {"name":"yop"},
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        cx,cy
+        ]
+      }
+    };
+    combinedcoords.push(Okpoint)
+  })
+});
+
+//console.log(combinedcoords);
+var combined = turf.featurecollection(combinedcoords);
+console.log(combined);
+//.features.coordinates
+
+fuck =[]
+d3.json("poly.geojson",function(err,dat){
+  tagged = turf.tag(combined, dat,'pop','pop');
+  _.each(tagged.features,function(tag){
+    console.log(tag);
+    pop = tag.properties.pop;
+    cx = tag.geometry.coordinates[0];
+    cy = tag.geometry.coordinates[1];
+    console.log(pop,cx,cy);
+  });
+
+});
+//console.log(fuck);
+
+//Get the nearest
+// var poi = d3.json("points.geojson",function(error, pt){
+// var points = pt.features;
+// _.each(points,function(d){
+//   console.log(d);
+//   var nearest = turf.nearest(d, kine);
+// });
+// return points = turf.tin(pt);
+// });
+
+setTimeout(function(){
+
+var poi =d3.json("points.geojson",function(error, pt){
+  console.log("bla");
+  svg.append("path")
+      .datum(grid)
+      .transition()
+      .attr("d", path);
+});
+
+  setTimeout(function(){
+    svg.append("path")
+        .datum(fc)
+        .transition()
+        .attr("d", path)
+        .attr("style","fill:blue");
+
+      setTimeout(function(){
+        svg.append("path")
+            .datum(nearpt)
+            .transition()
+            .attr("d", path)
+            .attr("style","fill:yellow");
+
+            setTimeout(function(){
+
+              svg.append("path")
+                  .datum(combined)
+                  .transition()
+                  .attr("d", path)
+                  .attr("style","fill:red");
+
+            }, 1700);
+
+      }, 1700);
+
+  }, 1700);
+
+
+}, 1700);
+
+
+});
+//console.log(points);
+
+
+
+
+
+
+
+
+
+</script>
